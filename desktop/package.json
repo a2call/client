@@ -65,7 +65,7 @@
     "del": "2.2.0",
     "devtron": "1.2.0",
     "electron-packager": "7.0.3",
-    "electron-prebuilt": "1.2.2",
+    "electron-prebuilt": "git://github.com/keybase/electron-download#5350b5a1bad8ba7bb8c7201abe59ae3a03c3d75d",
     "express": "4.13.4",
     "fs-extra": "0.30.0",
     "minimist": "1.2.0",
