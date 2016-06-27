@@ -4,6 +4,7 @@
   "description": "",
   "main": "./dist/main.bundle.js",
   "scripts": {
+    "vendor-install": "node npm-vendor.js",
     "start": "babel-node --presets es2015,stage-2 npm-helper.js start",
     "start-hot": "babel-node --presets es2015,stage-2 npm-helper.js start-hot",
     "start-cold": "babel-node --presets es2015,stage-2 npm-helper.js start-cold",
@@ -98,5 +99,6 @@
   },
   "optionalDependencies": {
     "fsevents": "1.0.12"
-  }
+  },
+  "keybaseVendoredDependencies": "git://github.com/keybase/js-vendor-desktop#b62ae0d132009da0b5df5f83aa60eddac2e53a1a"
 }

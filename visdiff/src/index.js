@@ -50,7 +50,12 @@ function checkout (commit) {
   } else {
     console.log(`Installing dependencies for package.json:${newPackageHash}...`)
   }
-  execSync('npm install', {stdio: 'inherit'})
+
+  if (JSON.parse(fs.readFileSync('package.json')).keybaseVendoredDependencies) {
+    execSync('npm run vendor-install', {stdio: 'inherit'})
+  } else {
+    execSync('npm install', {stdio: 'inherit'})
+  }
 }
 
 function renderScreenshots (commitRange) {
