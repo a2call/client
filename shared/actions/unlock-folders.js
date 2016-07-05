@@ -57,8 +57,8 @@ export function close (): AsyncAction {
   }
 }
 
-export function registerRekeyListener (): (dispatch: Dispatch) => void {
-  return dispatch => {
+export function registerRekeyListener (): (dispatch: Dispatch, getState: () => Object) => void {
+  return (dispatch, getState) => {
     engine.listenOnConnect('registerRekeyUI', () => {
       const params: delegateUiCtlRegisterRekeyUIRpc = {
         method: 'delegateUiCtl.registerRekeyUI',
@@ -74,20 +74,45 @@ export function registerRekeyListener (): (dispatch: Dispatch) => void {
       engine.rpc(params)
     })
 
-    createServer(
-      engine,
-      'keybase.1.rekeyUI.delegateRekeyUI',
-      null,
-      () => ({
-        'keybase.1.rekeyUI.delegateRekeyUI': (params, response) => { },
-        'keybase.1.rekeyUI.refresh': ({sessionID, problemSetDevices}, response) => {
-          console.log('Asked for rekey')
-          dispatch(({type: Constants.newRekeyPopup, payload: {devices: problemSetDevices.devices || [], sessionID}}: NewRekeyPopupAction))
-          uglySessionIDResponseMapper['refresh'] = response
-          response.result()
-        },
-      })
-    )
+    if (__DEV__ && false) {
+      // just for testing using the 'rekey trigger' command. conflicts with the createServer call
+      engine.listenGeneralIncomingRpc({'keybase.1.rekeyUI.refresh': ({problemSetDevices}) => {
+        let problemSet = {...problemSetDevices.problemSet}
+        // TEMP this is empty currently
+        if (problemSet && problemSet.tlfs && problemSet.tlfs.length > 0) {
+          const tlf = problemSet.tlfs[0]
+          if (tlf) {
+            tlf.solution_kids = (problemSetDevices.devices || []).map(d => d.deviceID)
+          }
+        }
+        dispatch({
+          type: Constants.newRekeyPopup,
+          payload: {
+            devices: problemSetDevices.devices || [],
+            username: getState().config.username || '',
+            sessionID: 0,
+            problemSet,
+          }})
+      }})
+    } else {
+      createServer(
+        engine,
+        'keybase.1.rekeyUI.delegateRekeyUI',
+        null,
+        () => ({
+          'keybase.1.rekeyUI.delegateRekeyUI': (params, response) => { },
+          'keybase.1.rekeyUI.refresh': ({sessionID, problemSetDevices}, response) => {
+            console.log('Asked for rekey')
+            dispatch(({type: Constants.newRekeyPopup,
+              payload: {devices: problemSetDevices.devices || [],
+              username: getState().config.username || '',
+                sessionID, problemSet: problemSetDevices.problemSet}}: NewRekeyPopupAction))
+            uglySessionIDResponseMapper['refresh'] = response
+            response.result()
+          },
+        })
+      )
+    }
 
     dispatch(({type: Constants.registerRekeyListener, payload: {started: true}}: RegisterRekeyListenerAction))
   }

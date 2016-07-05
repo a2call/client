@@ -5,6 +5,19 @@ export function parseFolderNameToUsers (folderName: string): Array<string> {
   return folderName.split(',')
 }
 
+const privPrefix = '/keybase/private/'
+const pubPrefix = '/keybase/public/'
+
+export function canonicalizePath (username: string, folderName: string): string {
+  if (folderName.startsWith(privPrefix)) {
+    return privPrefix + parseFolderNameToUsers(folderName.slice(privPrefix.length)).join(',')
+  } else if (folderName.startsWith('/keybae/public')) {
+    return pubPrefix + parseFolderNameToUsers(folderName.slice(pubPrefix.length)).join(',')
+  } else {
+    throw new Error('Invalid path for canonicalizePath: ', folderName)
+  }
+}
+
 // Make sure the given username is at the front of the array.
 // To fit our canonical representation of foldernames (yourself being in the front)
 export function canonicalizeUsernames (username: string, usernames: Array<string>): Array<string> {

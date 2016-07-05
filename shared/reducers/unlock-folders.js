@@ -4,12 +4,19 @@ import * as Constants from '../constants/unlock-folders'
 import * as CommonConstants from '../constants/common'
 import type {UnlockFolderActions, Device} from '../constants/unlock-folders'
 import {toDeviceType} from '../constants/types/more'
+import type {$Exact} from '../constants/types/more'
+import {canonicalizePath} from '../util/kbfs'
 
 export type State = {
   started: boolean,
   closed: boolean,
   phase: 'dead' | 'promptOtherDevice' | 'paperKeyInput' | 'success',
-  devices: ?Array<Device>,
+  devices: Array<Device>,
+  tlfs: Array<$Exact<{
+    name: string,
+    waitingForParticipantUnlock: Array<Device>,
+    youCanUnlock: Array<Device>,
+  }>>,
   waiting: boolean,
   paperkeyError: ?string,
   sessionID: ?number
@@ -20,7 +27,8 @@ const initialState: State = {
   closed: true,
   phase: 'dead',
   waiting: false,
-  devices: null,
+  devices: [],
+  tlfs: [],
   paperkeyError: null,
   sessionID: null,
 }
@@ -94,15 +102,27 @@ export default function (state: State = initialState, action: UnlockFolderAction
           name, deviceID,
         }))
 
-        if (devices.length) {
-          return {
-            ...state, devices, closed: false,
-            sessionID: action.payload.sessionID,
-          }
-        } else { // close as its all fixed
-          return {...state, devices, closed: true,
-            sessionID: action.payload.sessionID,
-          }
+        const username = (action.payload && action.payload.username) || ''
+        const tlfs = (action.payload.problemSet.tlfs || [])
+          .map(problemTLF => {
+            const solutions = (problemTLF.solution_kids || []).map(kid => devices.find(d => d.deviceID === kid))
+            // All solutions are currently your own solutions...
+            const waitingForParticipantUnlock = []
+            const youCanUnlock = solutions
+
+            return {
+              name: canonicalizePath(username, problemTLF.tlf.name),
+              waitingForParticipantUnlock,
+              youCanUnlock,
+            }
+          })
+
+        return {
+          ...state,
+          devices,
+          tlfs,
+          closed: !devices.length,
+          sessionID: action.payload.sessionID,
         }
       }
       return state

@@ -15,7 +15,7 @@ export type Props = {
   folderProps: ?RenderProps,
   openInKBFS: (path: string) => void,
   username: string,
-  routeAppend: (path: any) => void
+  routeAppend: (path: any) => void,
 }
 
 type State = {
@@ -41,6 +41,7 @@ class Folders extends Component<void, Props, State> {
       <Render
         {...this.props.folderProps}
         onClick={path => this.props.routeAppend(path)}
+        onRekey={path => this.props.routeAppend(path)}
         onOpen={path => this.props.openInKBFS(path)}
         onSwitchTab={showingPrivate => this.setState({showingPrivate})}
         showingPrivate={this.state.showingPrivate}
@@ -58,10 +59,30 @@ class Folders extends Component<void, Props, State> {
   }
 }
 
+// Set rekey meta if this tlf is part of the rekey set
+const injectMeta = (tlf, lockedTLFs) => ({
+  ...tlf,
+  meta: lockedTLFs.find(lockedTLF => lockedTLF.name === tlf.path) ? 'rekey' : tlf.meta,
+})
+
+const injectTlfsIgnored = (folders, lockedTLFs) => ({
+  ...folders,
+  tlfs: (folders.tlfs || []).map(tlf => injectMeta(tlf, lockedTLFs)),
+  ignored: (folders.ignored || []).map(tlf => injectMeta(tlf, lockedTLFs)),
+})
+
+const injectRekey = (folderProps, lockedTLFs) => {
+  return {
+    ...folderProps,
+    private: injectTlfsIgnored(folderProps.private, lockedTLFs),
+    public: injectTlfsIgnored(folderProps.public, lockedTLFs),
+  }
+}
+
 export default connect(
   state => ({
     username: state.config.username,
-    folderProps: state.favorite,
+    folderProps: injectRekey(state.favorite, state.unlockFolders.tlfs),
   }),
   dispatch => bindActionCreators({favoriteList, routeAppend, openInKBFS}, dispatch)
 )(Folders)

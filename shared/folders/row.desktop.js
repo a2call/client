@@ -96,7 +96,11 @@ const Row = ({users, isPublic, ignored, meta, modified, hasData, smallMode, onOp
             type='BodySmall' className='folder-row-hover-action' onClick={onOpenClick} style={stylesAction}>Open</Text>}
           {meta === 'rekey' && <Button
             backgroundMode={styles.modifiedMode} small={smallMode} type='Secondary'
-            onClick={() => onRekey && onRekey(path)} label='Rekey' style={stylesAction} />}
+            onClick={e => {
+              if (onRekey) {
+                e.stopPropagation()
+                onRekey(path)
+              } }} label='Rekey' style={stylesAction} />}
           <Icon type={icon} style={{visibility: hasData ? 'visible' : 'hidden', ...(smallMode && !hasData ? {display: 'none'} : {})}} />
         </Box>
       </Box>
